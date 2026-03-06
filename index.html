@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBHR Security System</title>
+    <style>
+        :root {
+            --neon-green: #00ff41;
+            --dark-bg: #050505;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--dark-bg);
+            color: var(--neon-green);
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* خلفية الماتريكس */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 450px; /* الحجم المثالي للموبايل والكمبيوتر */
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid var(--neon-green);
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+            text-align: center;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 10px 0;
+            text-shadow: 0 0 10px var(--neon-green);
+        }
+
+        .hidden { display: none; }
+
+        /* الأزرار المتجاوبة */
+        button {
+            background: transparent;
+            color: var(--neon-green);
+            border: 1px solid var(--neon-green);
+            padding: 15px;
+            margin: 8px 0;
+            width: 100%;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: var(--neon-green);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-green);
+        }
+
+        /* تقسيم الشبكة للمنصات */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #111;
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .result-box {
+            background: #002200;
+            padding: 15px;
+            border: 1px dashed var(--neon-green);
+            margin: 15px 0;
+            font-size: 1.2rem;
+            word-wrap: break-word; /* لضمان عدم خروج النص الطويل عن الإطار */
+        }
+
+        /* تحسين للموبايلات الصغيرة */
+        @media (max-width: 360px) {
+            h1 { font-size: 1.8rem; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrix-canvas"></canvas>
+
+    <div id="welcome" class="container">
+        <h1>MBHR</h1>
+        <p>[ SECURE PROTOCOL ACTIVE ]</p>
+        <button onclick="showScreen('selection')">INITIALIZE SYSTEM</button>
+    </div>
+
+    <div id="selection" class="container hidden">
+        <h3>SELECT TARGET</h3>
+        <div class="grid">
+            <button onclick="setTarget('Orange Cash')">Orange Cash</button>
+            <button onclick="setTarget('Vodafone Cash')">Vodafone Cash</button>
+            <button onclick="setTarget('Fawry')">Fawry</button>
+            <button onclick="setTarget('WE')">WE</button>
+            <button onclick="setTarget('Bank Account')">Bank Account</button>
+            <button onclick="setTarget('Facebook')">Facebook</button>
+            <button onclick="setTarget('Instagram')">Instagram</button>
+            <button onclick="setTarget('TikTok')">TikTok</button>
+            <button onclick="setTarget('X (Twitter)')">X / Twitter</button>
+            <button onclick="setTarget('Other')">Other</button>
+        </div>
+    </div>
+
+    <div id="config" class="container hidden">
+        <h2 id="display-target"></h2>
+        
+        <label>CHARACTER LENGTH:</label>
+        <input type="number" id="len" value="12" min="4" max="50">
+
+        <label>SECURITY LEVEL:</label>
+        <select id="type">
+            <option value="num">Numbers Only</option>
+            <option value="num_sym">Numbers & Symbols</option>
+            <option value="mixed">Full Encrypted (Mixed)</option>
+            <option value="let">Letters Only</option>
+        </select>
+
+        <button onclick="generate()">GENERATE PASSWORD</button>
+        
+        <div id="result-div" class="hidden">
+            <div id="output" class="result-box"></div>
+            <button onclick="copyText()" style="background: #004400;">COPY PASSWORD</button>
+        </div>
+
+        <button onclick="showScreen('selection')" style="border-color: #444; color: #666;">RETURN</button>
+    </div>
+
+    <script>
+        // تأثير الماتريكس
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()";
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#0F0";
+            ctx.font = fontSize + "px arial";
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+
+        // التنقل بين الصفحات
+        function showScreen(id) {
+            document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function setTarget(name) {
+            document.getElementById('display-target').innerText = name;
+            showScreen('config');
+        }
+
+        function generate() {
+            const length = document.getElementById('len').value;
+            const type = document.getElementById('type').value;
+            let chars = "";
+            if (type === "num") chars = "0123456789";
+            else if (type === "num_sym") chars = "0123456789!@#$%^&*()";
+            else if (type === "mixed") chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+            else chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+            let pass = "";
+            for (let i = 0; i < length; i++) {
+                pass += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('output').innerText = pass;
+            document.getElementById('result-div').classList.remove('hidden');
+        }
+
+        function copyText() {
+            const text = document.getElementById('output').innerText;
+            navigator.clipboard.writeText(text);
+            alert("SECURED: Password Copied!");
+        }
+
+        // تعديل حجم الكانفاس عند تغيير حجم النافذة
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
